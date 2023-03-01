@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  api:
+    build: ./api
+    container_name: api_c
+    ports: 
+      - '5000:5000'
+    volumes:
+      - ./api:/usr/app/api
+      - /usr/app/api/node_modules
+    command: sh -c "npm run dev"
+  frontend:
+    build: ./frontend
+    container_name: frontend_c
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/usr/app/frontend
+      - /usr/app/frontend/node_modules
+    command: sh -c "npm run dev"
