@@ -9,28 +9,26 @@
 <h1 align="center">Social Media App</h1>
 
 <p align="center">
-  <img alt="Github top language" src="https://img.shields.io/github/languages/top/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8">
+  <img alt="Github top language" src="https://img.shields.io/github/languages/top/LucasPeixotg/social-media-app?color=56BEB8">
 
-  <img alt="Github language count" src="https://img.shields.io/github/languages/count/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8">
+  <img alt="Github language count" src="https://img.shields.io/github/languages/count/LucasPeixotg/social-media-app?color=56BEB8">
 
-  <img alt="Repository size" src="https://img.shields.io/github/repo-size/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8">
+  <img alt="Repository size" src="https://img.shields.io/github/repo-size/LucasPeixotg/social-media-app?color=56BEB8">
 
-  <img alt="License" src="https://img.shields.io/github/license/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8">
+  <!--<img alt="License" src="https://img.shields.io/github/license/LucasPeixotg/social-media-app?color=56BEB8"> -->
 
-  <!-- <img alt="Github issues" src="https://img.shields.io/github/issues/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8" /> -->
+  <!-- <img alt="Github issues" src="https://img.shields.io/github/issues/LucasPeixotg/social-media-app?color=56BEB8" /> -->
 
-  <!-- <img alt="Github forks" src="https://img.shields.io/github/forks/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8" /> -->
+  <!-- <img alt="Github forks" src="https://img.shields.io/github/forks/LucasPeixotg/social-media-app?color=56BEB8" /> -->
 
-  <!-- <img alt="Github stars" src="https://img.shields.io/github/stars/{{YOUR_GITHUB_USERNAME}}/social?color=56BEB8" /> -->
+  <!-- <img alt="Github stars" src="https://img.shields.io/github/stars/LucasPeixotg/social-media-app?color=56BEB8" /> -->
 </p>
 
-<!-- Status -->
-
-<!-- <h4 align="center"> 
+<h4 align="center"> 
 	🚧  Social 🚀 Under construction...  🚧
 </h4> 
 
-<hr> -->
+<hr> 
 
 <p align="center">
   <a href="#dart-about">About</a> &#xa0; | &#xa0; 
@@ -39,7 +37,7 @@
   <a href="#white_check_mark-requirements">Requirements</a> &#xa0; | &#xa0;
   <a href="#checkered_flag-starting">Starting</a> &#xa0; | &#xa0;
   <a href="#memo-license">License</a> &#xa0; | &#xa0;
-  <a href="https://github.com/{{YOUR_GITHUB_USERNAME}}" target="_blank">Author</a>
+  <a href="https://github.com/LucasPeixotg" target="_blank">Author</a>
 </p>
 
 <br>
@@ -58,34 +56,42 @@ Describe your project
 
 The following tools were used in this project:
 
-- [Expo](https://expo.io/)
+api:
+- [Node.js](https://nodejs.org/en/)
+- [Express]()
+- [Passport]()
+
+
+frontend:
 - [Node.js](https://nodejs.org/en/)
 - [React](https://pt-br.reactjs.org/)
-- [React Native](https://reactnative.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
+- [React Router]()
+- [Vite]()
+- []()
 
 ## :white_check_mark: Requirements ##
 
-Before starting :checkered_flag:, you need to have [Git](https://git-scm.com) and [Node](https://nodejs.org/en/) installed.
+Before starting :checkered_flag:, you need to have [Git](https://git-scm.com) and [Docker compose]() installed.
 
 ## :checkered_flag: Starting ##
 
 ```bash
 # Clone this project
-$ git clone https://github.com/{{YOUR_GITHUB_USERNAME}}/social
+# git clone https://github.com/lucaspeixotg/social
 
 # Access
 $ cd social
 
-# Install dependencies
-$ yarn
+# Run via docker compose
+$ docker compose -f docker-compose.dev.yml up --build
 
-# Run the project
-$ yarn start
+# The api will initialize in the <http://localhost:5000>
+# The frontend will initialize in the <http://localhost:5173>
 
-# The server will initialize in the <http://localhost:3000>
+# enjoy ;)
 ```
 
+<!--
 ## :memo: License ##
 
 This project is under license from MIT. For more details, see the [LICENSE](LICENSE.md) file.
@@ -96,3 +102,4 @@ Made with :heart: by <a href="https://github.com/{{YOUR_GITHUB_USERNAME}}" targe
 &#xa0;
 
 <a href="#top">Back to top</a>
+-->
