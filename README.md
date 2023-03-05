@@ -57,10 +57,11 @@ Describe your project
 The following tools were used in this project:
 
 api:
+- [Neo4j]()
 - [Node.js](https://nodejs.org/en/)
 - [Express]()
 - [Passport]()
-- [Neo4j]()
+- [Bcrypt]()
 
 
 frontend:
@@ -68,7 +69,7 @@ frontend:
 - [React](https://pt-br.reactjs.org/)
 - [React Router]()
 - [Vite]()
-- []()
+
 
 ## :white_check_mark: Requirements ##
 
