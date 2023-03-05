@@ -83,7 +83,7 @@ $ git clone https://github.com/lucaspeixotg/social
 $ cd social
 
 # Run via docker compose
-$ docker compose -f docker-compose.dev.yml up --build
+$ docker-compose -f docker-compose.dev.yml up --build
 
 # The api will initialize in the <http://localhost:5000>
 # The frontend will initialize in the <http://localhost:5173>
