@@ -8,16 +8,28 @@ class User {
         try {
             const { username, hash } = user
 
-            const query = `CREATE (user:USER { 
-                                    username: $username,
-                                    hash: $hash
-                                })
-                                RETURN user`
-            
+            const query = `
+                CREATE (user:USER {
+                    date: $date,
+                    privacyStatus: 'private',
+                    dateOfBirth: $dateOfBirth,
+                    username: $username,
+                    hash: $hash
+                })
+                RETURN user`
+
             await session.executeWrite(tx => {
-                result = tx.run(query, { username, hash})
+                result = tx.run(
+                    query,
+                    {
+                        date: Date.now(),
+                        dateOfBirth: '',
+                        username,
+                        hash
+                    }
+                )
             })
-        } catch(error) {
+        } catch (error) {
             console.error(error)
         } finally {
             await session.close()
@@ -26,26 +38,128 @@ class User {
     }
 
     static async findByUsername(username) {
-        const session = driver.session({ database: 'neo4j' });
+        const session = driver.session({ database: 'neo4j' })
 
         let result
         try {
             const query = `MATCH (user:USER)
-                            WHERE user.username = $username
-                            RETURN user LIMIT 1`
+                WHERE user.username = $username
+                RETURN user LIMIT 1
+            `
 
             const queryResult = await session.run(query, { username })
 
             result = {
-                _id: queryResult.records[0]._fields[0].elementId,
+                _id: queryResult.records[0]._fields[0].identity.low,
                 ...queryResult.records[0]._fields[0].properties
-            } 
+            }
 
+        } catch (error) {
+            console.error(error)
+            return null
+        } finally {
+            await session.close()
+            return result
+        }
+    }
+
+    static async follow(followerId, targetUserId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        let result
+        try {
+            const queryTargetUserPrivacyStatus = `
+                MATCH (u:USER) 
+                RETURN u
+            `
+
+            const queryPrivacyResult = await session.run(queryTargetUserPrivacyStatus)
+            const privacyStatus = queryPrivacyResult.records[0]._fields[0].properties.privacyStatus
+
+            const followQuery = `
+                MATCH (follower:USER)
+                WHERE ID(follower) = $followerId 
+                MATCH (targetUser:USER)
+                WHERE ID(targetUser) = $targetUserId
+                CREATE (follower)-[relation:FOLLOWS { accepted: $accepted, date: $date }]->(targetUser)
+                RETURN { relation: type(relation), accepted: relation.accepted }
+            `
+
+            const followQueryOptions = {
+                followerId: parseInt(followerId),
+                targetUserId: parseInt(targetUserId),
+                date: Date.now()
+            }
+
+            if (privacyStatus == 'private') {
+                followQueryOptions.accepted = false
+            } else {
+                followQueryOptions.accepted = true
+            }
+
+            result = await session.run(followQuery, followQueryOptions)
         } catch (error) {
             console.error(error)
         } finally {
             await session.close()
-            return result
+            return result.records[0]._fields[0]
+        }
+    }
+
+    static async acceptFollow(userId, followerId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        let result
+        try {
+            const acceptQuery = `
+                MATCH (user:USER)
+                WHERE ID(user) = $userId 
+                MATCH (follower:USER)
+                WHERE ID(follower) = $followerId
+                MATCH (follower) -[relation:FOLLOWS]-> (user)
+                SET relation.accepted = true
+                SET relation.date = $date
+                RETURN { relation: type(relation), accepted: relation.accepted }
+            `
+
+            const acceptQueryOptions = {
+                userId: parseInt(userId),
+                followerId: parseInt(followerId),
+                date: Date.now()
+            }
+
+            result = await session.run(acceptQuery, acceptQueryOptions)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            await session.close()
+            return result.records[0]._fields[0]
+        }
+    }
+
+    static async removeFollow(userId, followerId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        try {
+            const removeQuery = `
+                MATCH (user:USER)
+                WHERE  ID(user) = $userId
+                MATCH (follower:USER)
+                WHERE ID(follower) = $followerId
+                MATCH (follower) -[relation:FOLLOWS]-> (user)
+                DELETE relation
+            `
+
+            const removeQueryOptions = {
+                userId: parseInt(userId),
+                followerId: parseInt(followerId)
+            }
+
+            await session.run(removeQuery, removeQueryOptions)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            await session.close()
         }
     }
 }

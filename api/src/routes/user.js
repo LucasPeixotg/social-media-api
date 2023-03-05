@@ -8,9 +8,9 @@ router.get('/search/username', async (req, res) => {
     if(!offset) offset = 0
 
     try {
-        const result = await User.searchByUsername(searchTerm)
+        const result = await User.searchByUsername(username, limit, offset)
     
-        res.status(200).json(result)
+        res.status(200).json({ result })
     } catch(error) {
         res.status(500).json({ message: 'Could not fetch data' })
     }

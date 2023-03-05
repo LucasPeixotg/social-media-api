@@ -34,7 +34,11 @@ async (req, res, next) => {
             async (error) => {
               if (error) return next(error)
 
-              const body = { username: user.username }
+              const body = { 
+                dateOfBirth: user.dateOfBirth,
+                _id: user._id,
+                username: user.username 
+              }
               const token = jwt.sign({ user: body }, JWT_SECRET)
 
               return res.json({ token })
