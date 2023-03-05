@@ -16,8 +16,4 @@ router.get('/search/username', async (req, res) => {
     }
 })
 
-routet.post('/friend', async (req, res) => {
-    
-})
-
 module.exports = router

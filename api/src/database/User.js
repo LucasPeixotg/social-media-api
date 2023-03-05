@@ -6,7 +6,7 @@ class User {
 
         let result
         try {
-            const { username, email, hash } = user
+            const { username, hash } = user
 
             const query = `CREATE (user:USER { 
                                     username: $username,
@@ -14,8 +14,8 @@ class User {
                                 })
                                 RETURN user`
             
-            result = await session.executeWrite(tx => {
-                tx.run(query, { username, hash})
+            await session.executeWrite(tx => {
+                result = tx.run(query, { username, hash})
             })
         } catch(error) {
             console.error(error)
@@ -32,15 +32,15 @@ class User {
         try {
             const query = `MATCH (user:USER)
                             WHERE user.username = $username
-                            RETURN user`;
-            
-            const queryResult = await session.executeRead(tx =>
-                tx.run(query, { username })
-            )
+                            RETURN user LIMIT 1`
 
-            console.log(queryResult)
-            result = queryResult.records[0]._fields.properties
-            console.log(result)
+            const queryResult = await session.run(query, { username })
+
+            result = {
+                _id: queryResult.records[0]._fields[0].elementId,
+                ...queryResult.records[0]._fields[0].properties
+            } 
+
         } catch (error) {
             console.error(error)
         } finally {

@@ -39,11 +39,13 @@ passport.use('login', new LocalStrategy(
         try {
             const user = await User.findByUsername(username)
 
+            console.log('user: ', user)
             if (!user) {
                 return done(null, false)
             }
 
             if (!comparePassword(password, user.hash)) {
+                console.log("AQUI PORRAAAA")
                 return done(null, false)
             }
 

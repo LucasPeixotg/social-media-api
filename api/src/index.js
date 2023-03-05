@@ -33,7 +33,12 @@ app.use(passport.initialize())
 routes setup
 */
 const authRouter = require('./routes/auth')
+const followRouter = require('./routes/follow')
+
 app.use(authRouter)
+
+// secure routes
+app.use('/follow', passport.authenticate('jwt', { session: false }), followRouter)
 
 
 /*
