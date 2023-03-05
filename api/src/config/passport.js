@@ -45,7 +45,6 @@ passport.use('login', new LocalStrategy(
             }
 
             if (!comparePassword(password, user.hash)) {
-                console.log("AQUI PORRAAAA")
                 return done(null, false)
             }
 
