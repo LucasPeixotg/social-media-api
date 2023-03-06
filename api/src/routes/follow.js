@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
     const { id } = req.body
 
-    if (!id) return res.status(400).json({ message: 'Bad request' })
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
 
     try {
         const relation = await User.follow(req.user._id, id)
@@ -23,7 +23,7 @@ router.post('/', async (req, res) => {
 router.put('/accept', async (req, res) => {
     const { id } = req.body
 
-    if (!id) return res.status(400).json({ message: 'Bad request' })
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
 
     try {
         const result = await User.acceptFollow(req.user._id, id)
@@ -38,7 +38,7 @@ router.put('/accept', async (req, res) => {
 router.delete('/', async (req, res) => {
     const { id } = req.body
 
-    if (!id) return res.status(400).json({ message: 'Bad request' })
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
 
     try {
         await User.removeFollow(req.user._id, id)
@@ -53,7 +53,7 @@ router.delete('/', async (req, res) => {
 router.post('/block', async (req, res) => {
     const { id } = req.body
 
-    if (!id) return res.status(400).json({ message: 'Bad request' })
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
 
     try {
         const result = await User.block(req.user._id, id)
@@ -67,7 +67,7 @@ router.post('/block', async (req, res) => {
 router.delete('/block', async (req, res) => {
     const { id } = req.body
 
-    if (!id) return res.status(400).json({ message: 'Bad request' })
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
 
     try {
         await User.unblock(req.user._id, id)
