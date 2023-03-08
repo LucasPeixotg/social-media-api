@@ -4,16 +4,13 @@ class Comment {
     static async commentPost(userId, postId, content) {
         const session = driver.session({ database: 'neo4j' })
     
+        console.log('ok')
         const query = `
-            MATCH (user:USER)
-            WHERE ID(user)=$userId
-            MERGE (user)-[publish:PUBLISH]->(comment:COMMENT)
-            SET comment.content=$content
+            MATCH (user:USER) WHERE ID(user)=$userId
+            MATCH (post:POST) WHERE ID(post)=$postId
+            MERGE (user)-[publish:PUBLISH]->(comment:COMMENT)-[:COMMENTS]->(post)
             SET publish.date=$date
-            WITH comment
-            MATCH (post:POST)
-            WHERE ID(post)=$postId
-            MERGE (comment) -[:COMMENTS]-> (post)
+            SET comment.content=$content
             RETURN comment
         `
     
@@ -40,17 +37,20 @@ class Comment {
         const session = driver.session({ database: 'neo4j' })
 
         const query = `
-            MATCH (user:USER)
-            WHERE ID(user)=$userId
-            MERGE (user)-[publish:PUBLISH]->(comment:COMMENT)
-            SET comment.content=$content
+            MATCH (user:USER) WHERE ID(user)=$userId
+            MATCH (c:COMMENT) WHERE ID(c)=$commentId
+            CREATE (user)-[publish:PUBLISH]->(comment:COMMENT)-[:COMMENTS]->(c)
             SET publish.date=$date
-            WITH comment
-            MATCH (target:COMMENT)
-            WHERE ID(target)=$commentId
-            MERGE (comment) -[:COMMENTS]-> (target)
+            SET comment.content=$content
             RETURN comment
         `
+
+        const queryOptions = {
+            userId: parseInt(userId),
+            commentId: parseInt(commentId),
+            content,
+            date: Date.now()
+        }
 
         let result
         try {

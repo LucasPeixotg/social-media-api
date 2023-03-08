@@ -119,6 +119,7 @@ class Post {
             return result
         }
     }
+
 }
 
 module.exports = Post

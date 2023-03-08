@@ -80,23 +80,6 @@ router.post('/dislike', async (req, res) => {
     }
 })
 
-// comment on post
-router.post('/comment', async (req, res) => {
-    const { content, id } = req.body
-
-    if(content === undefined || content === '' || id === undefined) {
-        return res.status(400).json({ message: 'Bad request' })
-    }
-
-    try {
-        const result = await Post.comment(req.user._id, id, content)
-        return res.status(200).json(result)
-    } catch(error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Could not comment on post' })
-    }
-})
-
 
 /*
 DELETE routes
@@ -109,9 +92,6 @@ router.delete('/like', (req, res) => { })
 
 // remove dislike
 router.delete('/dislike', (req, res) => { })
-
-// delete comment
-router.delete('/comment')
 
 
 /*

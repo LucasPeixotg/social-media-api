@@ -16,10 +16,38 @@ router.get('/:id', (req, res) => { })
 POST routes
 */
 // comment on a comment
-router.post('/comment/:id', (req, res) => { })
+router.post('/comment', async (req, res) => {
+    const { content, id } = req.body
+
+    if (content === undefined || content === '' || id === undefined) {
+        return res.status(400).json({ message: 'Bad request' })
+    }
+
+    try {
+        const result = await Comment.commentComment(req.user._id, id, content)
+        return res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: 'Could not comment on comment' })
+    }
+})
 
 // comment on a post
-router.post('/:id', (req, res) => { })
+router.post('/', async (req, res) => {
+    const { content, id } = req.body
+
+    if (content === undefined || content === '' || id === undefined) {
+        return res.status(400).json({ message: 'Bad request' })
+    }
+
+    try {
+        const result = await Comment.commentPost(req.user._id, id, content)
+        return res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: 'Could not comment on post' })
+    }
+})
 
 
 module.exports = router
