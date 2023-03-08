@@ -65,6 +65,8 @@ class User {
         }
     }
 
+
+
     static async follow(followerId, targetUserId) {
         const session = driver.session({ database: 'neo4j' })
 
@@ -139,7 +141,7 @@ class User {
         }
     }
 
-    static async removeFollow(userId, followerId) {
+    static async removeFollower(userId, followerId) {
         const session = driver.session({ database: 'neo4j' })
 
         const removeQuery = `

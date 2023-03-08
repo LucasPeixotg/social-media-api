@@ -5,19 +5,19 @@ const router = require('express').Router()
 const passport = require('passport')
 const jwt = require('jsonwebtoken')
 
-router.post('/register', 
-    passport.authenticate('register', { session: false }), 
-    async (req, res, next) => {
-        res.json({
-          message: 'Signup successful',
-          user: req.user
-        })
-    }
-    
+router.post('/register',
+  passport.authenticate('register', { session: false }),
+  async (req, res, next) => {
+    res.json({
+      message: 'Signup successful',
+      user: req.user
+    })
+  }
+
 )
 
-router.post('/login', 
-async (req, res, next) => {
+router.post('/login',
+  async (req, res, next) => {
     passport.authenticate(
       'login',
       async (err, user, info) => {
@@ -34,10 +34,10 @@ async (req, res, next) => {
             async (error) => {
               if (error) return next(error)
 
-              const body = { 
+              const body = {
                 dateOfBirth: user.dateOfBirth,
                 _id: user._id,
-                username: user.username 
+                username: user.username
               }
               const token = jwt.sign({ user: body }, JWT_SECRET)
 

@@ -1,5 +1,9 @@
 const router = require('express').Router()
 
-router.get('/search/username', async (req, res) => { })
+/*
+GET routes
+*/
+router.get('/search', async (req, res) => { })
+
 
 module.exports = router
