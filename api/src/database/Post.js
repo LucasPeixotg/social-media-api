@@ -120,6 +120,35 @@ class Post {
         }
     }
 
+    static async getAuthorId(postId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const query = `
+            MATCH (user:USER) -[:PUBLISH]-> (post:POST)
+            WHERE ID(post)=$postId
+            RETURN ID(user)
+        `
+
+        const queryOptions = {
+            postId: parseInt(postId)
+        }
+
+        let result
+        try {
+            const queryResponse = await session.run(query, queryOptions)
+
+            if(!queryResponse.records[0]) return undefined
+
+            result = queryResponse.records[0]._fields[0].low
+        } catch(error) {
+            console.error(error)
+            return undefined
+        } finally {
+            await session.close()
+            return result
+        }
+    }
+
 }
 
 module.exports = Post

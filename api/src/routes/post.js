@@ -9,9 +9,6 @@ GET routes
 // get most relevant posts
 router.get('/', (req, res) => { })
 
-// get comments
-router.get('/comment/:id', (req, res) => { })
-
 // get specific post
 router.get('/:id', async (req, res) => {
     const { id } = req.body

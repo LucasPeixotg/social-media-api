@@ -63,6 +63,39 @@ class Comment {
             return result
         }
     }
+
+    static async getComments(postId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const query = `
+            MATCH (user:USER) -[:PUBLISH] -> (comment:COMMENT) -[:COMMENTS]-> (post:POST)
+            WHERE ID(post)=$postId
+            RETURN { id: ID(comment), content: comment.content, author: user.username, authorId: ID(user)} 
+        `
+
+        const queryOptions = {
+            postId: parseInt(postId)
+        }
+
+        let result
+        try {
+            const response = await session.run(query, queryOptions)
+            
+            result = response.records.map(record => {
+                return {
+                    id: record._fields[0].id.low,
+                    author: record._fields[0].author,
+                    authorId: record._fields[0].authorId.low,
+                    content: record._fields[0].content
+                }
+            })
+        } catch(error) {
+            console.error(error)
+        } finally {
+            await session.close()
+            return result
+        }
+    }
 }
 
 module.exports = Comment

@@ -65,8 +65,6 @@ class User {
         }
     }
 
-
-
     static async follow(followerId, targetUserId) {
         const session = driver.session({ database: 'neo4j' })
 
@@ -221,6 +219,59 @@ class User {
             console.error(error)
         } finally {
             await session.close()
+        }
+    }
+
+    static async areFriendsOrPublic(userId, targetId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const queryPrivacyStatus = `
+            MATCH (user:USER)
+            WHERE ID(user)=$targetId
+            RETURN user.privacyStatus
+        `
+
+        let privacyStatus
+        try {
+            const queryPrivacyStatusResponse = await session.run(queryPrivacyStatus, { targetId: parseInt(targetId) })
+            privacyStatus = queryPrivacyStatusResponse.records[0]._fields[0]
+        } catch(error) {
+            console.error(error)
+            return false
+        } finally {
+            if(privacyStatus == 'public') {
+                await session.close()
+                return true
+            }
+        }
+
+        console.log('privacy status: ', privacyStatus)
+
+        const queryFriends = `
+            MATCH (user:USER) -[relation:FOLLOWS]-> (targetUser:USER)
+            WHERE ID(user)=$userId AND ID(targetUser)=$targetId
+            RETURN relation.accepted
+        `
+
+        const queryOptions = {
+            userId: parseInt(userId),
+            targetId: parseInt(targetId)
+        }
+
+        let accepted
+        try {
+            const queryFriendsResponse = await session.run(queryFriends, queryOptions)
+            
+            if(!queryFriendsResponse.records[0]) {
+                return false
+            }
+
+            accepted = queryFriendsResponse.records[0]._fields[0]
+        } catch(error) {
+            console.error(error)
+            return false
+        } finally {
+            return accepted
         }
     }
 }

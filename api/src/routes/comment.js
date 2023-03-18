@@ -1,5 +1,7 @@
 const router = require('express').Router()
 const Comment = require('../database/Comment')
+const Post = require('../database/Post')
+const User = require('../database/User')
 
 
 /*
@@ -9,7 +11,33 @@ GET routes
 router.get('/comment/:id')
 
 // get comments on a post
-router.get('/:id', (req, res) => { })
+router.get('/', async (req, res) => {
+    const { id } = req.body
+    if (id === undefined) return res.status(400).json({ message: 'Bad request' })
+
+    let { limit, page } = req.body
+    if (!limit || limit > 50) limit = 5
+    if (!page) page = 0
+
+    try {
+        const postAuthorId = await Post.getAuthorId(id)
+
+        if(postAuthorId === undefined) {
+            return res.status(404).json({ message: 'Not found' })
+        }
+
+        const authorized = postAuthorId == req.user._id || await User.areFriendsOrPublic(req.user._id, postAuthorId) 
+        if (!authorized) {
+            return res.status(101).json({ message: 'Unauthorized' })
+        }
+
+        const comments = await Comment.getComments(id)
+        return res.status(200).json(comments)
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json()
+    }
+})
 
 
 /*
