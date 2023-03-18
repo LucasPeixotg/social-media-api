@@ -5,7 +5,18 @@ const User = require('../database/User')
 /*
 GET routes
 */
-router.get('/', (req, res) => { })
+router.get('/followers', async (req, res) => {
+    try {
+        const followers = await User.getFollowers(req.user._id)
+
+        if(followers === null) return res.status(500).json({ message: 'Could not get followers' })
+
+        return res.status(200).json(followers)
+    } catch(error) {
+        console.error(error)
+        return res.status(500).json({ message: 'Could not get followers' })
+    }
+})
 
 
 /*
