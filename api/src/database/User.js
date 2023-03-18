@@ -162,7 +162,7 @@ class User {
         let result
         try {
             const response = await session.run(query, queryOptions)
-            console.log('User.js : LINE 152: \n', response.records)
+
             result = response.records.map(record => {
                 return {
                     id: record._fields[0].id.low,
@@ -179,6 +179,49 @@ class User {
             return result
         } 
 
+    }
+
+    static async getFollowing(userId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const query = `
+            MATCH (user:USER) -[follow:FOLLOWS]-> (following:USER)
+            WHERE ID(user) = $userId
+            WITH user, follow, following
+            OPTIONAL MATCH (following) -[relation:FOLLOWS]->(user)
+            RETURN {
+                id: ID(following),
+                username: following.username,
+                accepted: follow.accepted,
+                followBack: relation IS NOT NULL,
+                followBackAccepted: relation.accepted
+            }
+        `
+
+        const queryOptions = {
+            userId: parseInt(userId)
+        }
+
+        let result
+        try {
+            const response = await session.run(query, queryOptions)
+            console.log('User.js : LINE 198: \n', response.records)
+            result = response.records.map(record => {
+                return {
+                    id: record._fields[0].id.low,
+                    username: record._fields[0].username,
+                    accepted: record._fields[0].accepted,
+                    followBack: record._fields[0].followBack,
+                    followBackAccepted: record._fields[0].followBackAccepted
+                }
+            })
+        } catch(error) {
+            console.error(error)
+            return null
+        } finally {
+            await session.close()
+            return result
+        } 
     }
 
     static async removeFollower(userId, followerId) {

@@ -18,6 +18,18 @@ router.get('/followers', async (req, res) => {
     }
 })
 
+router.get('/following', async (req, res) => {
+    try {
+        const following = await User.getFollowing(req.user._id)
+
+        if(following === null) return res.status(500).json({ message: 'Could not get following' })
+
+        return res.status(200).json(following)
+    } catch(error) {
+        console.error(error)
+        return res.status(500).json({ message: 'Could not get following' })
+    }
+})
 
 /*
 POST routes
