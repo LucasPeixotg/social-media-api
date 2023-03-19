@@ -5,6 +5,7 @@ const User = require('../database/User')
 /*
 GET routes
 */
+// get everyone that is following the logged user
 router.get('/followers', async (req, res) => {
     try {
         const followers = await User.getFollowers(req.user._id)
@@ -18,6 +19,7 @@ router.get('/followers', async (req, res) => {
     }
 })
 
+// get everyone that the logged user is following
 router.get('/following', async (req, res) => {
     try {
         const following = await User.getFollowing(req.user._id)

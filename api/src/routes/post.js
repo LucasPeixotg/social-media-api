@@ -7,10 +7,10 @@ const { isValidPost } = require('../utils/post')
 GET routes
 */
 // get most relevant posts
-router.get('/', (req, res) => { })
+//router.get('/', (req, res) => { })
 
 // get specific post
-router.get('/:id', async (req, res) => {
+router.get('/', async (req, res) => {
     const { id } = req.body
 
     if (id === undefined) return res.status(400).json({ message: 'Bad request' })
@@ -18,7 +18,7 @@ router.get('/:id', async (req, res) => {
     try {
         const post = await Post.getById(id)
 
-        if (!post) return res.status(404).json({ message: 'Post dont exist' })
+        if (!post) return res.status(404).json({ message: 'Post don\'t exist' })
 
         return res.status(200).json(post)
     } catch (error) {

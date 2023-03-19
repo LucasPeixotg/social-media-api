@@ -18,21 +18,22 @@ class Post {
             SET relation.date = $date
             RETURN post
         `
+        
+        const { content, imageUrls } = post
+        const options = {
+            date: Date.now(),
+            content,
+            imageUrls,
+            userId: parseInt(userId)
+        }
 
         let result
         try {
-            const { content, imageUrls } = post
 
-            const queryOptions = {
-                date: Date.now(),
-                content,
-                imageUrls,
-                userId: parseInt(userId)
-            }
 
-            const queryResponse = await session.run(query, queryOptions)
+            const response = await session.run(query, options)
 
-            result = queryResponse.records[0]._fields[0].properties
+            result = response.records[0]._fields[0].properties
         } catch (error) {
             console.error(error)
         } finally {
@@ -66,7 +67,7 @@ class Post {
             RETURN like
         `
 
-        const queryOptions = {
+        const options = {
             userId: parseInt(userId),
             postId: parseInt(postId),
             date: Date.now()
@@ -74,9 +75,9 @@ class Post {
 
         let result
         try {
-            const queryResponse = await session.run(query, queryOptions)
+            const response = await session.run(query, options)
 
-            result = queryResponse.records[0]._fields[0].properties
+            result = response.records[0]._fields[0].properties
         } catch(error) {
             console.error(error)
         } finally {
@@ -109,9 +110,9 @@ class Post {
 
         let result
         try {
-            const queryResponse = await session.run(query, queryOptions)
+            const response = await session.run(query, queryOptions)
 
-            result = queryResponse.records[0]._fields[0].properties
+            result = response.records[0]._fields[0].properties
         } catch(error) {
             console.error(error)
         } finally {
@@ -135,14 +136,70 @@ class Post {
 
         let result
         try {
-            const queryResponse = await session.run(query, queryOptions)
+            const response = await session.run(query, queryOptions)
 
-            if(!queryResponse.records[0]) return undefined
+            if(!response.records[0]) return undefined
 
-            result = queryResponse.records[0]._fields[0].low
+            result = response.records[0]._fields[0].low
         } catch(error) {
             console.error(error)
             return undefined
+        } finally {
+            await session.close()
+            return result
+        }
+    }
+
+    static async getById(postId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const query = `
+            MATCH (author:USER) -[publish:PUBLISH]-> (post:POST)
+            WHERE ID(post)=$postId
+            OPTIONAL MATCH (user:USER) -[like:LIKES]-> (post)
+            OPTIONAL MATCH (post) -[:CONTAINS]-> (image:IMAGE)
+            WITH author, post, publish, collect(image.url) AS images, collect(user) AS likes
+            RETURN {
+                id: ID(post),
+                date: publish.date,
+                content: post.content,
+                images: images,
+                likes: likes,
+                author: author.username,
+                authorId: ID(author)
+            }
+        `
+
+        const options = {
+            postId: parseInt(postId)
+        }
+
+        let result
+        try {
+            const response = await session.run(query, options)
+
+            result = response.records.map(record => {
+                const likes = record._fields[0].likes.map(like => {
+                    return {
+                        id: like.identity.low,
+                        username: like.properties.username
+                    }
+                })
+
+                return {
+                    id: record._fields[0].id.low,
+                    date: record._fields[0].date,
+                    content: record._fields[0].content,
+                    author: record._fields[0].author,
+                    authorId: record._fields[0].authorId.low,
+                    likes: likes,
+                    images: record._fields[0].images
+                }
+            })
+
+        } catch(error) {
+            console.error(error)
+            return null
         } finally {
             await session.close()
             return result
