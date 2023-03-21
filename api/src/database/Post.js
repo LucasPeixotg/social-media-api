@@ -18,7 +18,7 @@ class Post {
             SET relation.date = $date
             RETURN post
         `
-        
+
         const { content, imageUrls } = post
         const options = {
             date: Date.now(),
@@ -78,7 +78,7 @@ class Post {
             const response = await session.run(query, options)
 
             result = response.records[0]._fields[0].properties
-        } catch(error) {
+        } catch (error) {
             console.error(error)
         } finally {
             await session.close()
@@ -113,7 +113,7 @@ class Post {
             const response = await session.run(query, queryOptions)
 
             result = response.records[0]._fields[0].properties
-        } catch(error) {
+        } catch (error) {
             console.error(error)
         } finally {
             await session.close()
@@ -138,10 +138,10 @@ class Post {
         try {
             const response = await session.run(query, queryOptions)
 
-            if(!response.records[0]) return undefined
+            if (!response.records[0]) return undefined
 
             result = response.records[0]._fields[0].low
-        } catch(error) {
+        } catch (error) {
             console.error(error)
             return undefined
         } finally {
@@ -197,7 +197,7 @@ class Post {
                 }
             })
 
-        } catch(error) {
+        } catch (error) {
             console.error(error)
             return null
         } finally {
@@ -206,6 +206,53 @@ class Post {
         }
     }
 
+    static async getRelevant(userId) {
+        const session = driver.session({ database: 'neo4j' })
+
+        const query = `
+            MATCH (user:USER) -[relation:FOLLOWS]-> (following:USER)
+            WHERE ID(user)=$userId AND (relation.accepted OR following.privacyStatus='public')
+            MATCH (following) -[publish:PUBLISH]-> (post) -[:CONTAINS]-> (image:IMAGE)
+            WITH following, publish, post, collect(image.url) AS images
+            RETURN {
+                id: ID(post),
+                author: following.username,
+                authorId: ID(following),
+                date: publish.date,
+                content: post.content,
+                images: images
+            }
+            ORDER BY publish.date DESC
+            LIMIT 5
+        `
+
+        const options = {
+            userId: parseInt(userId)
+        }
+
+        let result
+        try {
+            const response = await session.run(query, options)
+
+            result = response.records.map(record => {
+                return {
+                    author: record._fields[0].author,
+                    authorId: record._fields[0].authorId.low,
+                    id: record._fields[0].id.low,
+                    content: record._fields[0].content,
+                    date: record._fields[0].date,
+                    images: record._fields[0].images
+                }
+            })
+            console.log('RESULT l240: ', result)
+        } catch (error) {
+            console.error(error)
+            return null
+        } finally {
+            await session.close()
+            return result
+        }
+    }
 }
 
 module.exports = Post

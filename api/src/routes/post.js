@@ -7,7 +7,16 @@ const { isValidPost } = require('../utils/post')
 GET routes
 */
 // get most relevant posts
-//router.get('/', (req, res) => { })
+router.get('/relevant', async (req, res) => {
+    try {
+        const posts = await Post.getRelevant(req.user._id)
+
+        return res.status(200).json(posts)
+    } catch(error) {
+        console.error(error)
+        return res.status(500).json({ message: 'Could not get relevant posts'})
+    }
+})
 
 // get specific post
 router.get('/', async (req, res) => {
