@@ -53,7 +53,6 @@ router.post("/", async (req, res) => {
 
 	let result
 	try {
-		console.log("IMAGE LENGTH: ", images.length)
 		result = await Post.insert(req.user._id, {
 			content,
 			imageCount: images.length,
@@ -62,12 +61,9 @@ router.post("/", async (req, res) => {
 		console.error(error)
 		res.status(500).json({ message: "Could not create post" })
 	} finally {
-		console.log("result: ", result)
 		for (let i = 0; i < images.length; i++) {
-			console.log("DIRNAME: ")
 			let filedir = path.normalize(path.join(__dirname, "../../upload/"))
 			filedir = path.join(filedir, result[i] + path.extname(images[i].name))
-			console.log(filedir)
 			images[i].mv(filedir)
 		}
 
