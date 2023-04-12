@@ -1,3 +1,5 @@
+randomBytes = require('crypto').randomBytes
+
 const isValidPost = (post) => {
     try {
         if(typeof post.content != 'string') return false
@@ -10,6 +12,9 @@ const isValidPost = (post) => {
     }
 }
 
+const genImageFileName = (postId, ImageId) => randomBytes(10).toString() + '-' + postId + '-' + ImageId
+
 module.exports = {
-    isValidPost
+  isValidPost,
+  genImageFileName,
 }

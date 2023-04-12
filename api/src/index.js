@@ -4,6 +4,8 @@ const express = require('express')
 const app = express()
 
 const passport = require('passport')
+const fileUpload = require('express-fileupload')
+
 
 /*
 configuration middlewares
@@ -11,6 +13,7 @@ configuration middlewares
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cors())
+app.use(fileUpload())
 
 
 /*
@@ -36,6 +39,7 @@ const authRouter = require('./routes/auth')
 const followRouter = require('./routes/follow')
 const postRouter = require('./routes/post')
 const commentRouter = require('./routes/comment')
+const userRouter = require('./routes/user')
 
 app.use(authRouter)
 
@@ -43,6 +47,7 @@ app.use(authRouter)
 app.use('/follow', passport.authenticate('jwt', { session: false }), followRouter)
 app.use('/post', passport.authenticate('jwt', { session: false }), postRouter)
 app.use('/comment', passport.authenticate('jwt', { session: false }), commentRouter)
+app.use('/user', passport.authenticate('jwt', { session: false }), userRouter)
 
 
 /*
