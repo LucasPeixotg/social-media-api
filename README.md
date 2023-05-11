@@ -6,7 +6,7 @@
   <!-- <a href="https://social.netlify.app">Demo</a> -->
 </div>
 
-<h1 align="center">Social Media App</h1>
+<h1 align="center">Social Media Api</h1>
 
 <p align="center">
   <img alt="Github top language" src="https://img.shields.io/github/languages/top/LucasPeixotg/social-media-app?color=56BEB8">
@@ -81,7 +81,6 @@ $ cd social
 $ docker-compose -f docker-compose.dev.yml up --build
 
 # The api will initialize in the <http://localhost:5000>
-# The frontend will initialize in the <http://localhost:5173>
 
 # enjoy ;)
 ```
