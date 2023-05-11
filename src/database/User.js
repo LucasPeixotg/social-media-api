@@ -12,7 +12,7 @@ class User {
                 CREATE (user:USER {
                     date: $date,
                     privacyStatus: 'private',
-                    dateOfBirth: $dateOfBirth,
+                    birthday: $birthday,
                     username: $username,
                     hash: $hash
                 })
@@ -22,7 +22,7 @@ class User {
 			await session.executeWrite((tx) => {
 				result = tx.run(query, {
 					date: Date.now(),
-					dateOfBirth: "",
+					birthday: "",
 					username,
 					hash,
 				})
