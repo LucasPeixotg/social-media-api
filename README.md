@@ -64,13 +64,6 @@ api:
 - [Bcrypt]()
 
 
-frontend:
-- [Node.js](https://nodejs.org/en/)
-- [React](https://pt-br.reactjs.org/)
-- [React Router]()
-- [Vite]()
-
-
 ## :white_check_mark: Requirements ##
 
 Before starting :checkered_flag:, you need to have [Git](https://git-scm.com) and [Docker compose]() installed.
