@@ -1,7 +1,7 @@
 const router = require("express").Router()
 const path = require("path")
 
-const Post = require("../database/Post")
+const Post = require("../controllers/Post")
 const { isValidPost } = require("../utils/post")
 
 /*
@@ -48,8 +48,8 @@ router.post("/", async (req, res) => {
 	console.log("IMAGES - \n", images)
 
 	/*if (!isValidPost({ content })) {
-        return res.status(400).json({ message: 'Bad request' })
-    }*/
+		return res.status(400).json({ message: 'Bad request' })
+	}*/
 
 	let result
 	try {
@@ -105,21 +105,21 @@ router.post("/dislike", async (req, res) => {
 DELETE routes
 */
 // delete post
-router.delete("/", (req, res) => {})
+router.delete("/", (req, res) => { })
 
 // remove like
-router.delete("/like", (req, res) => {})
+router.delete("/like", (req, res) => { })
 
 // remove dislike
-router.delete("/dislike", (req, res) => {})
+router.delete("/dislike", (req, res) => { })
 
 /*
 PUT routes
 */
 // edit comment
-router.put("/comment", (req, res) => {})
+router.put("/comment", (req, res) => { })
 
 // edit post
-router.put("/:id", (req, res) => {})
+router.put("/:id", (req, res) => { })
 
 module.exports = router

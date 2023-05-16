@@ -7,8 +7,9 @@ const LocalStrategy = require('passport-local').Strategy
 const JWTStrategy = require('passport-jwt').Strategy
 const ExtractJWT = require('passport-jwt').ExtractJwt
 
-const User = require('../database/User')
-const { hashPassword, comparePassword } = require('../utils/auth')
+const UserController = require('../controllers/User')
+const { comparePassword } = require('../utils/auth')
+const User = require('../models/User')
 
 passport.use('register', new LocalStrategy(
     {
@@ -16,12 +17,12 @@ passport.use('register', new LocalStrategy(
         'passwordField': 'password'
     }, async (username, password, done) => {
         try {
-            const user = await User.findByUsername(username)
-            if (user) {
+            if (await UserController.findByUsername(username)) {
                 return done(null, false)
             }
 
-            const response = User.insert({ username, hash: hashPassword(password) })
+            const user = new User(username, password, '')
+            const response = UserController.insert(user)
             return done(null, response)
 
         } catch (error) {
@@ -37,7 +38,7 @@ passport.use('login', new LocalStrategy(
         'passwordField': 'password'
     }, async (username, password, done) => {
         try {
-            const user = await User.findByUsername(username)
+            const user = await UserController.findByUsername(username)
 
             if (!user) {
                 return done(null, false)

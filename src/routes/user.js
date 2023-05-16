@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const User = require('../database/User')
+const User = require('../controllers/User')
 
 /*
 GET routes
@@ -13,7 +13,7 @@ router.get('/search', async (req, res) => {
         const response = await User.search(username)
 
         return res.status(200).json(response)
-    } catch(error) {
+    } catch (error) {
         console.error(error)
         return res.status(500).json({ message: 'Could not search user' })
     }

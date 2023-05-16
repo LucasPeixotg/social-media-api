@@ -1,154 +1,119 @@
 const driver = require("../config/dbDriver").getConnection()
+require('dotenv').config
+const DATABASE = process.env.DATABASE
 
-class User {
-	static async insert(user) {
-		const session = driver.session({ database: "neo4j" })
+class UserController {
+	constructor() {
+		this.session = driver.session({ database: DATABASE })
+	}
 
+	async insert(user) {
 		let result
-		try {
-			const { username, hash } = user
-
-			const query = `
-                CREATE (user:USER {
-                    date: $date,
-                    privacyStatus: 'private',
-                    birthday: $birthday,
-                    username: $username,
-                    hash: $hash
-                })
-                RETURN user
-            `
-
-			await session.executeWrite((tx) => {
-				result = tx.run(query, {
-					date: Date.now(),
-					birthday: "",
-					username,
-					hash,
-				})
+		const query = `
+			CREATE (user:USER {
+				username: $username,
+				hash: $hash,
+				privacyStatus: 'private',
+				birthday: $birthday
 			})
+			RETURN user
+		`
+
+		try {
+			const rawResult = await this.session.run(query, {
+				username: user.username,
+				hash: user.hash,
+				privacyStatus: user.privacyStatus,
+				birthday: user.birthday
+			})
+
+			result = rawResult
 		} catch (error) {
 			console.error(error)
+			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async findByUsername(username) {
-		const session = driver.session({ database: "neo4j" })
-
+	async getByUsername(username) {
 		let result
-		const findQuery = `
+		const query = `
             MATCH (user:USER)
             WHERE user.username = $username
             RETURN user LIMIT 1
         `
 
 		try {
-			const queryResult = await session.run(findQuery, { username })
+			const rawResult = await this.session.run(query, { username })
 
 			result = {
-				_id: queryResult.records[0]._fields[0].identity.low,
-				...queryResult.records[0]._fields[0].properties,
+				_id: rawResult.records[0]._fields[0].identity.low,
+				...rawResult.records[0]._fields[0].properties,
 			}
 		} catch (error) {
 			console.error(error)
 			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async follow(followerId, targetUserId) {
-		const session = driver.session({ database: "neo4j" })
 
+	// THIS METHOD IS TOTALLY WRONG 
+	async createFriendship(userId, friendId, mutual) {
 		const queryTargetUserPrivacyStatus = `
             MATCH (u:USER) 
             RETURN u
         `
 
 		const followQuery = `
-            MATCH (follower:USER)
-            WHERE ID(follower) = $followerId 
-            MATCH (targetUser:USER)
-            WHERE ID(targetUser) = $targetUserId
-            CREATE (follower)-[relation:FOLLOWS { accepted: $accepted, date: $date }]->(targetUser)
-            RETURN { relation: type(relation), accepted: relation.accepted }
-        `
-
-		const followQueryOptions = {
-			followerId: parseInt(followerId),
-			targetUserId: parseInt(targetUserId),
-			date: Date.now(),
-		}
-
-		let result
-		try {
-			const queryPrivacyResult = await session.run(queryTargetUserPrivacyStatus)
-			const privacyStatus =
-				queryPrivacyResult.records[0]._fields[0].properties.privacyStatus
-
-			if (privacyStatus == "private") {
-				followQueryOptions.accepted = false
-			} else {
-				followQueryOptions.accepted = true
-			}
-
-			result = await session.run(followQuery, followQueryOptions)
-		} catch (error) {
-			console.error(error)
-		} finally {
-			await session.close()
-			return result.records[0]._fields[0]
-		}
-	}
-
-	static async acceptFollow(userId, followerId) {
-		const session = driver.session({ database: "neo4j" })
-
-		const acceptQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId 
-            MATCH (follower:USER)
-            WHERE ID(follower) = $followerId
-            MATCH (follower) -[relation:FOLLOWS]-> (user)
-            SET relation.accepted = true
-            SET relation.date = $date
+            MATCH (friend:USER)
+            WHERE ID(friend) = $friendId
+            MERGE (user)<-[relation:BEFRIENDS]->(friend)
+			SET relation.mutual = $mutual
+			SET relation.sender = $sender
             RETURN { relation: type(relation), accepted: relation.accepted }
         `
 
-		const acceptQueryOptions = {
+		const friendshipQueryOptions = {
 			userId: parseInt(userId),
-			followerId: parseInt(followerId),
-			date: Date.now(),
+			friendId: parseInt(friendId),
+			mutual: mutual,
+			sender: parseInt(userId),
 		}
 
 		let result
 		try {
-			result = await session.run(acceptQuery, acceptQueryOptions)
+			const rawResult = await this.session.run(queryTargetUserPrivacyStatus)
+			const privacyStatus =
+				rawResult.records[0]._fields[0].properties.privacyStatus
+
+			if (privacyStatus == "private") {
+				friendshipQueryOptions.accepted = false
+			} else {
+				friendshipQueryOptions.accepted = true
+			}
+
+			result = await this.session.run(followQuery, friendshipQueryOptions)
 		} catch (error) {
 			console.error(error)
 		} finally {
-			await session.close()
 			return result.records[0]._fields[0]
 		}
 	}
 
-	static async getFollowers(userId) {
-		const session = driver.session({ database: "neo4j" })
-
+	async getFriends(userId) {
 		const query = `
-            MATCH (follower:USER) -[follow:FOLLOWS]-> (user:USER)
+            MATCH (friend:USER) <-[relation:BEFRIENDS]-> (user:USER)
             WHERE ID(user)=$userId
-            WITH follower, user, follow
-            OPTIONAL MATCH (user) -[relation:FOLLOWS] -> (follower)
             RETURN {
-                id: ID(follower),
-                username: follower.username,
-                accepted: follow.accepted,
-                followBack: relation IS NOT NULL
+                id: ID(friend),
+                username: friend.username,
+                mutual: relation.mutual,
+				sender: relation.sender
             }
         `
 
@@ -158,7 +123,7 @@ class User {
 
 		let result
 		try {
-			const response = await session.run(query, queryOptions)
+			const response = await this.session.run(query, queryOptions)
 
 			result = response.records.map((record) => {
 				return {
@@ -172,14 +137,13 @@ class User {
 			console.error(error)
 			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async getFollowing(userId) {
-		const session = driver.session({ database: "neo4j" })
 
+	// REFACTOR GET REQUESTS AND REFRESH THE IDEA OF WHAT SHOULD I GET HERE
+	async getRequests(userId) {
 		const query = `
             MATCH (user:USER) -[follow:FOLLOWS]-> (following:USER)
             WHERE ID(user) = $userId
@@ -200,7 +164,7 @@ class User {
 
 		let result
 		try {
-			const response = await session.run(query, queryOptions)
+			const response = await this.session.run(query, queryOptions)
 			console.log("User.js : LINE 198: \n", response.records)
 			result = response.records.map((record) => {
 				return {
@@ -215,40 +179,35 @@ class User {
 			console.error(error)
 			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async removeFollower(userId, followerId) {
-		const session = driver.session({ database: "neo4j" })
-
+	async removeFriend(userId, friendsId) {
 		const removeQuery = `
             MATCH (user:USER)
             WHERE  ID(user) = $userId
-            MATCH (follower:USER)
-            WHERE ID(follower) = $followerId
-            MATCH (follower) -[relation:FOLLOWS]-> (user)
+            MATCH (friend:USER)
+            WHERE ID(friend) = $friendsId
+            MATCH (friend) <-[relation:BEFRIEDNS]-> (user)
             DELETE relation
         `
 
 		const removeQueryOptions = {
 			userId: parseInt(userId),
-			followerId: parseInt(followerId),
+			friendsId: parseInt(friendsId),
 		}
 
 		try {
-			await session.run(removeQuery, removeQueryOptions)
+			await this.session.run(removeQuery, removeQueryOptions)
 		} catch (error) {
 			console.error(error)
-		} finally {
-			await session.close()
 		}
 	}
 
-	static async block(userId, targetUserId) {
-		const session = driver.session({ database: "neo4j" })
+	/// TO FINISH REFACTORING WHAT IS BELOW
 
+	async block(userId, targetUserId) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
@@ -267,19 +226,16 @@ class User {
 
 		let result
 		try {
-			const queryResponse = await session.run(blockQuery, blockQueryOptions)
+			const queryResponse = await this.session.run(blockQuery, blockQueryOptions)
 			result = queryResponse.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async unblock(userId, targetUserId) {
-		const session = driver.session({ database: "neo4j" })
-
+	async unblock(userId, targetUserId) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
@@ -295,17 +251,15 @@ class User {
 		}
 
 		try {
-			await session.run(blockQuery, blockQueryOptions)
+			await this.session.run(blockQuery, blockQueryOptions)
 		} catch (error) {
 			console.error(error)
-		} finally {
-			await session.close()
 		}
 	}
 
-	static async search(username) {
-		const session = driver.session({ database: "neo4j" })
 
+	// SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" 
+	async search(username) {
 		const query = `
             MATCH (user:USER)
             WITH user, apoc.text.levenshteinDistance(user.username, $username) AS score
@@ -322,7 +276,7 @@ class User {
 
 		let result
 		try {
-			const response = await session.run(query, options)
+			const response = await this.session.run(query, options)
 			result = response.records.map((record) => {
 				return {
 					id: record._fields[0].id.low,
@@ -334,14 +288,11 @@ class User {
 			console.error(error)
 			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
-	static async areFriendsOrPublic(userId, targetId) {
-		const session = driver.session({ database: "neo4j" })
-
+	async areFriendsOrPublic(userId, targetId) {
 		const queryPrivacyStatus = `
             MATCH (user:USER)
             WHERE ID(user)=$targetId
@@ -350,7 +301,7 @@ class User {
 
 		let privacyStatus
 		try {
-			const queryPrivacyStatusResponse = await session.run(queryPrivacyStatus, {
+			const queryPrivacyStatusResponse = await this.session.run(queryPrivacyStatus, {
 				targetId: parseInt(targetId),
 			})
 			privacyStatus = queryPrivacyStatusResponse.records[0]._fields[0]
@@ -359,7 +310,6 @@ class User {
 			return false
 		} finally {
 			if (privacyStatus == "public") {
-				await session.close()
 				return true
 			}
 		}
@@ -379,7 +329,7 @@ class User {
 
 		let accepted
 		try {
-			const queryFriendsResponse = await session.run(queryFriends, queryOptions)
+			const queryFriendsResponse = await this.session.run(queryFriends, queryOptions)
 
 			if (!queryFriendsResponse.records[0]) {
 				return false
@@ -390,10 +340,9 @@ class User {
 			console.error(error)
 			return false
 		} finally {
-			await session.close()
 			return accepted
 		}
 	}
 }
 
-module.exports = User
+module.exports = new UserController()

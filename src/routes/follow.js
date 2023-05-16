@@ -1,33 +1,30 @@
 const router = require('express').Router()
-const User = require('../database/User')
+const UserController = require('../controllers/User')
 
 
 /*
 GET routes
 */
-// get everyone that is following the logged user
-router.get('/followers', async (req, res) => {
+router.get('/follow', async (req, res) => {
     try {
         const followers = await User.getFollowers(req.user._id)
 
-        if(followers === null) return res.status(500).json({ message: 'Could not get followers' })
+        if (followers === null) return res.status(500).json({ message: 'Could not get followers' })
 
         return res.status(200).json(followers)
-    } catch(error) {
+    } catch (error) {
         console.error(error)
         return res.status(500).json({ message: 'Could not get followers' })
     }
 })
-
-// get everyone that the logged user is following
 router.get('/following', async (req, res) => {
     try {
         const following = await User.getFollowing(req.user._id)
 
-        if(following === null) return res.status(500).json({ message: 'Could not get following' })
+        if (following === null) return res.status(500).json({ message: 'Could not get following' })
 
         return res.status(200).json(following)
-    } catch(error) {
+    } catch (error) {
         console.error(error)
         return res.status(500).json({ message: 'Could not get following' })
     }
@@ -123,7 +120,7 @@ router.delete('/block', async (req, res) => {
 
     try {
         await User.unblock(req.user._id, id)
-        return res.status(200).json({ message: 'User unblocked'})
+        return res.status(200).json({ message: 'User unblocked' })
     } catch (error) {
         console.error(error)
         return res.status(500).json({ message: 'Could not unblock user' })

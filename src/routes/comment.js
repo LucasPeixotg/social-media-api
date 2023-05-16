@@ -1,7 +1,7 @@
 const router = require('express').Router()
-const Comment = require('../database/Comment')
-const Post = require('../database/Post')
-const User = require('../database/User')
+const Comment = require('../controllers/Comment')
+const Post = require('../controllers/Post')
+const User = require('../controllers/User')
 
 
 /*
@@ -22,11 +22,11 @@ router.get('/', async (req, res) => {
     try {
         const postAuthorId = await Post.getAuthorId(id)
 
-        if(postAuthorId === undefined) {
+        if (postAuthorId === undefined) {
             return res.status(404).json({ message: 'Not found' })
         }
 
-        const authorized = postAuthorId == req.user._id || await User.areFriendsOrPublic(req.user._id, postAuthorId) 
+        const authorized = postAuthorId == req.user._id || await User.areFriendsOrPublic(req.user._id, postAuthorId)
         if (!authorized) {
             return res.status(101).json({ message: 'Unauthorized' })
         }
