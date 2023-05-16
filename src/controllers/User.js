@@ -4,10 +4,10 @@ const DATABASE = process.env.DATABASE
 
 /*
 	TODO: 
-	[ ] SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" ON THE search METHOD
-	[ ] REFACTOR block AND unblock METHOD
-	[ ] REFACTOR areFriendsOrPublic
+	[ ] REFACTOR addBlockRelationship AND removeBlockRelationship METHOD
+	[ ] RETHINK AND REFACTOR areFriendsOrPublic
 	[ ] RETHINK AND REFACTOR getRequests
+	[ ] SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" ON THE search METHOD
 */
 
 // the user controller is a class that allows multiple actions on the database
@@ -17,41 +17,13 @@ class UserController {
 		this.session = driver.session({ database: DATABASE })
 	}
 
-	async insert(user) {
-		const query = `
-			CREATE (user:USER {
-				username: $username,
-				hash: $hash,
-				privacyStatus: 'private',
-				birthday: $birthday
-			})
-			RETURN user
-		`
-
-		let result
-		try {
-			const rawResult = await this.session.run(query, {
-				username: user.username,
-				hash: user.hash,
-				privacyStatus: user.privacyStatus,
-				birthday: user.birthday
-			})
-
-			result = rawResult
-		} catch (error) {
-			console.error(error)
-			return null
-		} finally {
-			return result
-		}
-	}
-
+	// READ METHODS
 	async getByUsername(username) {
 		const query = `
 		MATCH (user:USER)
 		WHERE user.username = $username
 		RETURN user LIMIT 1
-        `
+		`
 
 		let result
 		try {
@@ -66,36 +38,6 @@ class UserController {
 			return null
 		} finally {
 			return result
-		}
-	}
-
-
-	async createFriendship(userId, friendId, mutual) {
-		const query = `
-            MATCH (user:USER)
-            WHERE ID(user) = $userId 
-            MATCH (friend:USER)
-            WHERE ID(friend) = $friendId
-            MERGE (user)<-[relation:BEFRIENDS]->(friend)
-			SET relation.mutual = $mutual
-			SET relation.sender = $sender
-            RETURN { relation: type(relation), accepted: relation.accepted }
-        `
-
-		const options = {
-			userId: parseInt(userId),
-			friendId: parseInt(friendId),
-			mutual: mutual,
-			sender: parseInt(userId),
-		}
-
-		let result
-		try {
-			result = await this.session.run(query, options)
-		} catch (error) {
-			console.error(error)
-		} finally {
-			return result.records[0]._fields[0]
 		}
 	}
 
@@ -135,8 +77,6 @@ class UserController {
 		}
 	}
 
-
-	// REFACTOR GET REQUESTS AND REFRESH THE IDEA OF WHAT SHOULD I GET HERE
 	async getRequests(userId) {
 		const query = `
             MATCH (user:USER) -[follow:FOLLOWS]-> (following:USER)
@@ -176,80 +116,6 @@ class UserController {
 			return result
 		}
 	}
-
-	async removeFriend(userId, friendsId) {
-		const query = `
-            MATCH (user:USER)
-            WHERE  ID(user) = $userId
-            MATCH (friend:USER)
-            WHERE ID(friend) = $friendsId
-            MATCH (friend) <-[relation:BEFRIENDS]-> (user)
-            DELETE relation
-        `
-
-		const options = {
-			userId: parseInt(userId),
-			friendsId: parseInt(friendsId),
-		}
-
-		try {
-			await this.session.run(query, options)
-		} catch (error) {
-			console.error(error)
-		}
-	}
-
-	/// TO FINISH REFACTORING WHAT IS BELOW
-	async block(userId, targetUserId) {
-		const blockQuery = `
-            MATCH (user:USER)
-            WHERE ID(user) = $userId
-            MATCH (targetUser:USER)
-            WHERE ID(targetUser) = $targetUserId
-            MERGE (user)-[relation:BLOCKS]->(targetUser)
-            SET relation.date = $date
-            RETURN relation
-        `
-
-		const blockQueryOptions = {
-			userId: parseInt(userId),
-			targetUserId: parseInt(targetUserId),
-			date: Date.now(),
-		}
-
-		let result
-		try {
-			const queryResponse = await this.session.run(blockQuery, blockQueryOptions)
-			result = queryResponse.records[0]._fields[0].properties
-		} catch (error) {
-			console.error(error)
-		} finally {
-			return result
-		}
-	}
-
-	async unblock(userId, blockedUser) {
-		const blockQuery = `
-            MATCH (user:USER)
-            WHERE ID(user) = $userId
-            MATCH (targetUser:USER)
-            WHERE ID(targetUser) = $targetUserId
-            MATCH (user)-[relation:BLOCKS]->(targetUser)
-            DELETE relation
-        `
-
-		const blockQueryOptions = {
-			userId: parseInt(userId),
-			targetUserId: parseInt(blockedUser),
-		}
-
-		try {
-			await this.session.run(blockQuery, blockQueryOptions)
-		} catch (error) {
-			console.error(error)
-		}
-	}
-
 
 	async search(username) {
 		const query = `
@@ -333,6 +199,138 @@ class UserController {
 			return false
 		} finally {
 			return accepted
+		}
+	}
+
+
+	// CREATE METHODS
+	async insert(user) {
+		const query = `
+			CREATE (user:USER {
+				username: $username,
+				hash: $hash,
+				privacyStatus: 'private',
+				birthday: $birthday
+			})
+			RETURN user
+		`
+
+		let result
+		try {
+			const rawResult = await this.session.run(query, {
+				username: user.username,
+				hash: user.hash,
+				privacyStatus: user.privacyStatus,
+				birthday: user.birthday
+			})
+
+			result = rawResult
+		} catch (error) {
+			console.error(error)
+			return null
+		} finally {
+			return result
+		}
+	}
+
+	async addBefriendRelationship(userId, friendId, mutual) {
+		const query = `
+            MATCH (user:USER)
+            WHERE ID(user) = $userId 
+            MATCH (friend:USER)
+            WHERE ID(friend) = $friendId
+            MERGE (user)<-[relation:BEFRIENDS]->(friend)
+			SET relation.mutual = $mutual
+			SET relation.sender = $sender
+            RETURN { relation: type(relation), accepted: relation.accepted }
+        `
+
+		const options = {
+			userId: parseInt(userId),
+			friendId: parseInt(friendId),
+			mutual: mutual,
+			sender: parseInt(userId),
+		}
+
+		let result
+		try {
+			result = await this.session.run(query, options)
+		} catch (error) {
+			console.error(error)
+		} finally {
+			return result.records[0]._fields[0]
+		}
+	}
+
+	async removeBefriendRelationship(userId, friendsId) {
+		const query = `
+            MATCH (user:USER)
+            WHERE  ID(user) = $userId
+            MATCH (friend:USER)
+            WHERE ID(friend) = $friendsId
+            MATCH (friend) <-[relation:BEFRIENDS]-> (user)
+            DELETE relation
+        `
+
+		const options = {
+			userId: parseInt(userId),
+			friendsId: parseInt(friendsId),
+		}
+
+		try {
+			await this.session.run(query, options)
+		} catch (error) {
+			console.error(error)
+		}
+	}
+
+	async addBlockRelationship(userId, targetUserId) {
+		const blockQuery = `
+            MATCH (user:USER)
+            WHERE ID(user) = $userId
+            MATCH (targetUser:USER)
+            WHERE ID(targetUser) = $targetUserId
+            MERGE (user)-[relation:BLOCKS]->(targetUser)
+            SET relation.date = $date
+            RETURN relation
+        `
+
+		const blockQueryOptions = {
+			userId: parseInt(userId),
+			targetUserId: parseInt(targetUserId),
+			date: Date.now(),
+		}
+
+		let result
+		try {
+			const queryResponse = await this.session.run(blockQuery, blockQueryOptions)
+			result = queryResponse.records[0]._fields[0].properties
+		} catch (error) {
+			console.error(error)
+		} finally {
+			return result
+		}
+	}
+
+	async removeBlockRelationship(userId, blockedUser) {
+		const blockQuery = `
+            MATCH (user:USER)
+            WHERE ID(user) = $userId
+            MATCH (targetUser:USER)
+            WHERE ID(targetUser) = $targetUserId
+            MATCH (user)-[relation:BLOCKS]->(targetUser)
+            DELETE relation
+        `
+
+		const blockQueryOptions = {
+			userId: parseInt(userId),
+			targetUserId: parseInt(blockedUser),
+		}
+
+		try {
+			await this.session.run(blockQuery, blockQueryOptions)
+		} catch (error) {
+			console.error(error)
 		}
 	}
 }
