@@ -10,7 +10,7 @@ const DATABASE = process.env.DATABASE
 	[ ] SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" ON THE search METHOD
 */
 
-// the user controller is a class that allows multiple actions on the database
+// the UserController is a class that allows multiple actions on the database
 // it only has user related actions
 class UserController {
 	constructor() {

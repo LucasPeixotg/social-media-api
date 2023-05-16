@@ -14,7 +14,7 @@ const DATABASE = process.env.DATABASE
 		THE QUERY RETURNS ID AND THEN THE METHOD getById IS USED AUTOMATICALLY
 */
 
-// the post controller is a class that allows multiple actions on the database
+// the PostController is a class that allows multiple actions on the database
 // it only has post related actions
 class PostController {
 	constructor() {

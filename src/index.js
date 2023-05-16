@@ -35,20 +35,23 @@ app.use(passport.initialize())
 /*
 routes setup
 */
+/*
 const authRouter = require('./routes/auth')
 const followRouter = require('./routes/follow')
 const postRouter = require('./routes/post')
 const commentRouter = require('./routes/comment')
 const userRouter = require('./routes/user')
+*/
 
 app.use(authRouter)
 
 // secure routes
+/*
 app.use('/follow', passport.authenticate('jwt', { session: false }), followRouter)
 app.use('/post', passport.authenticate('jwt', { session: false }), postRouter)
 app.use('/comment', passport.authenticate('jwt', { session: false }), commentRouter)
 app.use('/user', passport.authenticate('jwt', { session: false }), userRouter)
-
+*/
 
 /*
 start server
