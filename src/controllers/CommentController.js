@@ -4,7 +4,8 @@ const DATABASE = process.env.DATABASE
 
 /*
 	TODO: 
-	[ ] 
+	[ ] ADD THE METHOD createLikeRelationship
+	[ ] ADD THE METHOD removeLikeRelationship
 */
 
 // the CommentController is a class that allows multiple actions on the database
@@ -14,10 +15,7 @@ class CommentController {
 		this.session = driver.session({ database: DATABASE })
 	}
 
-
 	async insert(comment) {
-		const session = driver.session({ database: "neo4j" })
-
 		console.log("ok")
 		const query = `
             MATCH (user:USER) WHERE ID(user)=$userId
@@ -28,36 +26,36 @@ class CommentController {
             RETURN comment
         `
 
-		const queryOptions = {
-			userId: parseInt(userId),
-			postId: parseInt(postId),
-			content,
+		const options = {
+			userId: comment.author,
+			postId: comment.post,
+			content: comment.content,
 			date: Date.now(),
 		}
 
 		let result
 		try {
-			const queryResponse = await session.run(query, queryOptions)
-			result = queryResponse.records[0]._fields[0].properties
+			const rawResult = await this.session.run(query, options)
+			result = rawResult.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
+			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
 
+	// FOR NOW THERE WILL BE NO WAY TO COMMENT A COMMENT
+	/*
 	async commentComment(userId, commentId, content) {
-		const session = driver.session({ database: "neo4j" })
-
 		const query = `
-            MATCH (user:USER) WHERE ID(user)=$userId
-            MATCH (c:COMMENT) WHERE ID(c)=$commentId
-            CREATE (user)-[publish:PUBLISH]->(comment:COMMENT)-[:COMMENTS]->(c)
-            SET publish.date=$date
-            SET comment.content=$content
-            RETURN comment
-        `
+			MATCH (user:USER) WHERE ID(user)=$userId
+			MATCH (c:COMMENT) WHERE ID(c)=$commentId
+			CREATE (user)-[publish:PUBLISH]->(comment:COMMENT)-[:COMMENTS]->(c)
+			SET publish.date=$date
+			SET comment.content=$content
+			RETURN comment
+		`
 
 		const queryOptions = {
 			userId: parseInt(userId),
@@ -68,34 +66,31 @@ class CommentController {
 
 		let result
 		try {
-			const queryResponse = await session.run(query, queryOptions)
+			const queryResponse = await this.session.run(query, queryOptions)
 			result = queryResponse.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
 		} finally {
-			await session.close()
 			return result
 		}
-	}
+	}*/
 
-	async getComments(postId) {
-		const session = driver.session({ database: "neo4j" })
-
+	async get(postId) {
 		const query = `
             MATCH (user:USER) -[:PUBLISH] -> (comment:COMMENT) -[:COMMENTS]-> (post:POST)
             WHERE ID(post)=$postId
             RETURN { id: ID(comment), content: comment.content, author: user.username, authorId: ID(user)} 
         `
 
-		const queryOptions = {
+		const options = {
 			postId: parseInt(postId),
 		}
 
 		let result
 		try {
-			const response = await session.run(query, queryOptions)
+			const rawResult = await this.session.run(query, options)
 
-			result = response.records.map((record) => {
+			result = rawResult.records.map((record) => {
 				return {
 					id: record._fields[0].id.low,
 					author: record._fields[0].author,
@@ -105,8 +100,8 @@ class CommentController {
 			})
 		} catch (error) {
 			console.error(error)
+			return null
 		} finally {
-			await session.close()
 			return result
 		}
 	}
