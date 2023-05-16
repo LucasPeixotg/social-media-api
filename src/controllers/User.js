@@ -2,13 +2,22 @@ const driver = require("../config/dbDriver").getConnection()
 require('dotenv').config
 const DATABASE = process.env.DATABASE
 
+/*
+	TODO: 
+	[ ] SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" ON THE search METHOD
+	[ ] REFACTOR block AND unblock METHOD
+	[ ] REFACTOR areFriendsOrPublic
+	[ ] RETHINK AND REFACTOR getRequests
+*/
+
+// the user controller is a class that allows multiple actions on the database
+// it only has user related actions
 class UserController {
 	constructor() {
 		this.session = driver.session({ database: DATABASE })
 	}
 
 	async insert(user) {
-		let result
 		const query = `
 			CREATE (user:USER {
 				username: $username,
@@ -19,6 +28,7 @@ class UserController {
 			RETURN user
 		`
 
+		let result
 		try {
 			const rawResult = await this.session.run(query, {
 				username: user.username,
@@ -37,13 +47,13 @@ class UserController {
 	}
 
 	async getByUsername(username) {
-		let result
 		const query = `
-            MATCH (user:USER)
-            WHERE user.username = $username
-            RETURN user LIMIT 1
+		MATCH (user:USER)
+		WHERE user.username = $username
+		RETURN user LIMIT 1
         `
 
+		let result
 		try {
 			const rawResult = await this.session.run(query, { username })
 
@@ -60,14 +70,8 @@ class UserController {
 	}
 
 
-	// THIS METHOD IS TOTALLY WRONG 
 	async createFriendship(userId, friendId, mutual) {
-		const queryTargetUserPrivacyStatus = `
-            MATCH (u:USER) 
-            RETURN u
-        `
-
-		const followQuery = `
+		const query = `
             MATCH (user:USER)
             WHERE ID(user) = $userId 
             MATCH (friend:USER)
@@ -78,7 +82,7 @@ class UserController {
             RETURN { relation: type(relation), accepted: relation.accepted }
         `
 
-		const friendshipQueryOptions = {
+		const options = {
 			userId: parseInt(userId),
 			friendId: parseInt(friendId),
 			mutual: mutual,
@@ -87,17 +91,7 @@ class UserController {
 
 		let result
 		try {
-			const rawResult = await this.session.run(queryTargetUserPrivacyStatus)
-			const privacyStatus =
-				rawResult.records[0]._fields[0].properties.privacyStatus
-
-			if (privacyStatus == "private") {
-				friendshipQueryOptions.accepted = false
-			} else {
-				friendshipQueryOptions.accepted = true
-			}
-
-			result = await this.session.run(followQuery, friendshipQueryOptions)
+			result = await this.session.run(query, options)
 		} catch (error) {
 			console.error(error)
 		} finally {
@@ -129,8 +123,8 @@ class UserController {
 				return {
 					id: record._fields[0].id.low,
 					username: record._fields[0].username,
-					accepted: record._fields[0].accepted,
-					followBack: record._fields[0].followBack,
+					mutual: record._fields[0].mutual,
+					sender: record._fields[0].sender,
 				}
 			})
 		} catch (error) {
@@ -184,36 +178,35 @@ class UserController {
 	}
 
 	async removeFriend(userId, friendsId) {
-		const removeQuery = `
+		const query = `
             MATCH (user:USER)
             WHERE  ID(user) = $userId
             MATCH (friend:USER)
             WHERE ID(friend) = $friendsId
-            MATCH (friend) <-[relation:BEFRIEDNS]-> (user)
+            MATCH (friend) <-[relation:BEFRIENDS]-> (user)
             DELETE relation
         `
 
-		const removeQueryOptions = {
+		const options = {
 			userId: parseInt(userId),
 			friendsId: parseInt(friendsId),
 		}
 
 		try {
-			await this.session.run(removeQuery, removeQueryOptions)
+			await this.session.run(query, options)
 		} catch (error) {
 			console.error(error)
 		}
 	}
 
 	/// TO FINISH REFACTORING WHAT IS BELOW
-
 	async block(userId, targetUserId) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
             MATCH (targetUser:USER)
             WHERE ID(targetUser) = $targetUserId
-            MERGE (user)-[relation:BLOCK]->(targetUser)
+            MERGE (user)-[relation:BLOCKS]->(targetUser)
             SET relation.date = $date
             RETURN relation
         `
@@ -235,19 +228,19 @@ class UserController {
 		}
 	}
 
-	async unblock(userId, targetUserId) {
+	async unblock(userId, blockedUser) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
             MATCH (targetUser:USER)
             WHERE ID(targetUser) = $targetUserId
-            MATCH (user)-[relation:BLOCK]->(targetUser)
+            MATCH (user)-[relation:BLOCKS]->(targetUser)
             DELETE relation
         `
 
 		const blockQueryOptions = {
 			userId: parseInt(userId),
-			targetUserId: parseInt(targetUserId),
+			targetUserId: parseInt(blockedUser),
 		}
 
 		try {
@@ -258,7 +251,6 @@ class UserController {
 	}
 
 
-	// SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" 
 	async search(username) {
 		const query = `
             MATCH (user:USER)
@@ -345,4 +337,6 @@ class UserController {
 	}
 }
 
+// Exports an instance of the user controller so that it's not created multiple times
+// For a better understand about this search for "singleton pattern"
 module.exports = new UserController()
