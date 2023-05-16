@@ -7,7 +7,7 @@ const LocalStrategy = require('passport-local').Strategy
 const JWTStrategy = require('passport-jwt').Strategy
 const ExtractJWT = require('passport-jwt').ExtractJwt
 
-const UserController = require('../controllers/User')
+const UserController = require('../controllers/UserController')
 const { comparePassword } = require('../utils/auth')
 const User = require('../models/User')
 

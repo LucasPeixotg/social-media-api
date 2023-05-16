@@ -1,7 +1,21 @@
 const driver = require("../config/dbDriver").getConnection()
+require('dotenv').config
+const DATABASE = process.env.DATABASE
 
-class Comment {
-	static async commentPost(userId, postId, content) {
+/*
+	TODO: 
+	[ ] 
+*/
+
+// the CommentController is a class that allows multiple actions on the database
+// it only has comment related actions
+class CommentController {
+	constructor() {
+		this.session = driver.session({ database: DATABASE })
+	}
+
+
+	async insert(comment) {
 		const session = driver.session({ database: "neo4j" })
 
 		console.log("ok")
@@ -33,7 +47,7 @@ class Comment {
 		}
 	}
 
-	static async commentComment(userId, commentId, content) {
+	async commentComment(userId, commentId, content) {
 		const session = driver.session({ database: "neo4j" })
 
 		const query = `
@@ -64,7 +78,7 @@ class Comment {
 		}
 	}
 
-	static async getComments(postId) {
+	async getComments(postId) {
 		const session = driver.session({ database: "neo4j" })
 
 		const query = `
@@ -98,4 +112,6 @@ class Comment {
 	}
 }
 
-module.exports = Comment
+// Exports an instance of CommentController so that it's not created multiple times
+// For a better understand about this search for "singleton pattern"
+module.exports = new CommentController()

@@ -1,7 +1,7 @@
 const router = require("express").Router()
 const path = require("path")
 
-const Post = require("../controllers/Post")
+const Post = require("../controllers/PostController")
 const { isValidPost } = require("../utils/post")
 
 /*

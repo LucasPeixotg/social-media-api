@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const User = require('../controllers/User')
+const User = require('../controllers/UserController')
 
 /*
 GET routes

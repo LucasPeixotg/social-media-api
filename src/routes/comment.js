@@ -1,7 +1,7 @@
 const router = require('express').Router()
-const Comment = require('../controllers/Comment')
-const Post = require('../controllers/Post')
-const User = require('../controllers/User')
+const Comment = require('../controllers/CommentController')
+const Post = require('../controllers/PostController')
+const User = require('../controllers/UserController')
 
 
 /*
