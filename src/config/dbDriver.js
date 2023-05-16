@@ -1,9 +1,12 @@
 const neo4j = require('neo4j-driver')
 
-let _driver
+let _driverSession
 module.exports = {
-    connect: (uri, user, password) => {
-        _driver = neo4j.driver(uri, neo4j.auth.basic(user, password));
+    connect: (uri, user, password, database) => {
+        _driverSession = neo4j.driver(uri, neo4j.auth.basic(user, password)).session({ database })
     },
-    getConnection: () => _driver
+    getConnection: () => _driverSession,
+    close: () => {
+        _driverSession.close()
+    }
 }

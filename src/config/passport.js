@@ -17,12 +17,13 @@ passport.use('register', new LocalStrategy(
         'passwordField': 'password'
     }, async (username, password, done) => {
         try {
-            if (await UserController.findByUsername(username)) {
+            // check if username is already in use
+            if (await UserController.getByUsername(usename)) {
                 return done(null, false)
             }
 
             const user = new User(username, password, '')
-            const response = UserController.insert(user)
+            const response = await UserController.insert(user)
             return done(null, response)
 
         } catch (error) {
@@ -38,16 +39,19 @@ passport.use('login', new LocalStrategy(
         'passwordField': 'password'
     }, async (username, password, done) => {
         try {
-            const user = await UserController.findByUsername(username)
+            const user = await UserController.getByUsername(username)
 
+            // check if user doesn't exist
             if (!user) {
                 return done(null, false)
             }
 
+            // check if the password is incorrect
             if (!comparePassword(password, user.hash)) {
                 return done(null, false)
             }
 
+            // login successful
             return done(null, user)
         } catch (error) {
             console.error(error)

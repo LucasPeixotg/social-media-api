@@ -1,6 +1,4 @@
-const driver = require("../config/dbDriver").getConnection()
-require('dotenv').config
-const DATABASE = process.env.DATABASE
+const SESSION = require("../config/dbDriver").getConnection()
 
 /*
 	TODO: 
@@ -11,11 +9,7 @@ const DATABASE = process.env.DATABASE
 // the CommentController is a class that allows multiple actions on the database
 // it only has comment related actions
 class CommentController {
-	constructor() {
-		this.session = driver.session({ database: DATABASE })
-	}
-
-	async insert(comment) {
+	static async insert(comment) {
 		console.log("ok")
 		const query = `
             MATCH (user:USER) WHERE ID(user)=$userId
@@ -35,7 +29,7 @@ class CommentController {
 
 		let result
 		try {
-			const rawResult = await this.session.run(query, options)
+			const rawResult = await SESSION.run(query, options)
 			result = rawResult.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
@@ -47,7 +41,7 @@ class CommentController {
 
 	// FOR NOW THERE WILL BE NO WAY TO COMMENT A COMMENT
 	/*
-	async commentComment(userId, commentId, content) {
+	static async commentComment(userId, commentId, content) {
 		const query = `
 			MATCH (user:USER) WHERE ID(user)=$userId
 			MATCH (c:COMMENT) WHERE ID(c)=$commentId
@@ -66,7 +60,7 @@ class CommentController {
 
 		let result
 		try {
-			const queryResponse = await this.session.run(query, queryOptions)
+			const queryResponse = await session.run(query, queryOptions)
 			result = queryResponse.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
@@ -75,7 +69,7 @@ class CommentController {
 		}
 	}*/
 
-	async get(postId) {
+	static async get(postId) {
 		const query = `
             MATCH (user:USER) -[:PUBLISH] -> (comment:COMMENT) -[:COMMENTS]-> (post:POST)
             WHERE ID(post)=$postId
@@ -88,7 +82,7 @@ class CommentController {
 
 		let result
 		try {
-			const rawResult = await this.session.run(query, options)
+			const rawResult = await SESSION.run(query, options)
 
 			result = rawResult.records.map((record) => {
 				return {
@@ -107,6 +101,4 @@ class CommentController {
 	}
 }
 
-// Exports an instance of CommentController so that it's not created multiple times
-// For a better understand about this search for "singleton pattern"
-module.exports = new CommentController()
+module.exports = CommentController

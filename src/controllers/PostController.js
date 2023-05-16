@@ -1,6 +1,4 @@
-const driver = require("../config/dbDriver").getConnection()
-require('dotenv').config
-const DATABASE = process.env.DATABASE
+const SESSION = require("../config/dbDriver").getConnection()
 
 /*
 	TODO: 
@@ -17,12 +15,8 @@ const DATABASE = process.env.DATABASE
 // the PostController is a class that allows multiple actions on the database
 // it only has post related actions
 class PostController {
-	constructor() {
-		this.session = driver.session({ database: DATABASE })
-	}
-
 	// READ METHODS
-	async getAuthorId(postId) {
+	static async getAuthorId(postId) {
 		const query = `
 			MATCH (user:USER) -[:PUBLISH]-> (post:POST)
 			WHERE ID(post)=$postId
@@ -31,7 +25,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, { postId })
+			const rawResult = await SESSION.run(query, { postId })
 
 			if (!rawResult.records[0]) return null
 
@@ -44,7 +38,7 @@ class PostController {
 		}
 	}
 
-	async getById(postId) {
+	static async getById(postId) {
 		const query = `
 			MATCH (author:USER) -[publish:PUBLISH]-> (post:POST)
 			WHERE ID(post)=$postId
@@ -64,7 +58,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, { postId })
+			const rawResult = await SESSION.run(query, { postId })
 
 			result = rawResult.records.map((record) => {
 				const likes = record._fields[0].likes.map((like) => {
@@ -92,7 +86,7 @@ class PostController {
 		}
 	}
 
-	async getRelevant(userId) {
+	static async getRelevant(userId) {
 		const query = `
 			MATCH (user:USER) -[relation:FOLLOWS]-> (following:USER)
 			WHERE ID(user)=$userId AND (relation.accepted OR following.privacyStatus='public')
@@ -112,7 +106,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, { userId })
+			const rawResult = await SESSION.run(query, { userId })
 
 			result = rawResult.records.map((record) => {
 				return {
@@ -133,7 +127,7 @@ class PostController {
 	}
 
 	// CREATE METHODS
-	async insert(post) {
+	static async insert(post) {
 		const query = `
             MATCH (user:USER) WHERE ID(user) = $userId
             CREATE (user) -[relation:PUBLISH]-> (post:POST)
@@ -165,7 +159,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, options)
+			const rawResult = await SESSION.run(query, options)
 
 			result = rawResult.records.map((record) => {
 				return record._fields[0]
@@ -177,7 +171,7 @@ class PostController {
 		}
 	}
 
-	async createLikeRelationship(userId, postId) {
+	static async createLikeRelationship(userId, postId) {
 		const query = `
             MATCH (user:USER)
             WHERE ID(user)=$userId
@@ -199,7 +193,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, options)
+			const rawResult = await SESSION.run(query, options)
 
 			result = rawResult.records[0]._fields[0].properties
 		} catch (error) {
@@ -209,7 +203,7 @@ class PostController {
 		}
 	}
 
-	async createDislikeRelationship(userId, postId) {
+	static async createDislikeRelationship(userId, postId) {
 		const query = `
             MATCH (user:USER)
             WHERE ID(user)=$userId
@@ -231,7 +225,7 @@ class PostController {
 
 		let result
 		try {
-			const rawResult = await session.run(query, options)
+			const rawResult = await SESSION.run(query, options)
 
 			result = rawResult.records[0]._fields[0].properties
 		} catch (error) {
@@ -243,6 +237,4 @@ class PostController {
 
 }
 
-// Exports an instance of post controller so that it's not created multiple times
-// For a better understand about this search for "singleton pattern"
-module.exports = new PostController()
+module.exports = PostController

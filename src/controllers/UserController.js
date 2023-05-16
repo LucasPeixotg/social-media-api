@@ -1,24 +1,19 @@
-const driver = require("../config/dbDriver").getConnection()
-require('dotenv').config
-const DATABASE = process.env.DATABASE
-
+const SESSION = require("../config/dbDriver").getConnection()
 /*
 	TODO: 
 	[ ] REFACTOR addBlockRelationship AND removeBlockRelationship METHOD
 	[ ] RETHINK AND REFACTOR areFriendsOrPublic
 	[ ] RETHINK AND REFACTOR getRequests
 	[ ] SEARCH BETTER ALGORITHMS THAN "levenshteinDistance" ON THE search METHOD
+
+	[ ] REFACTOR insert TO RETURN USER MODEL
 */
 
 // the UserController is a class that allows multiple actions on the database
 // it only has user related actions
 class UserController {
-	constructor() {
-		this.session = driver.session({ database: DATABASE })
-	}
-
 	// READ METHODS
-	async getByUsername(username) {
+	static async getByUsername(username) {
 		const query = `
 		MATCH (user:USER)
 		WHERE user.username = $username
@@ -27,7 +22,7 @@ class UserController {
 
 		let result
 		try {
-			const rawResult = await this.session.run(query, { username })
+			const rawResult = await SESSION.run(query, { username })
 
 			result = {
 				_id: rawResult.records[0]._fields[0].identity.low,
@@ -41,7 +36,7 @@ class UserController {
 		}
 	}
 
-	async getFriends(userId) {
+	static async getFriends(userId) {
 		const query = `
             MATCH (friend:USER) <-[relation:BEFRIENDS]-> (user:USER)
             WHERE ID(user)=$userId
@@ -59,7 +54,7 @@ class UserController {
 
 		let result
 		try {
-			const response = await this.session.run(query, queryOptions)
+			const response = await SESSION.run(query, queryOptions)
 
 			result = response.records.map((record) => {
 				return {
@@ -77,7 +72,7 @@ class UserController {
 		}
 	}
 
-	async getRequests(userId) {
+	static async getRequests(userId) {
 		const query = `
             MATCH (user:USER) -[follow:FOLLOWS]-> (following:USER)
             WHERE ID(user) = $userId
@@ -98,7 +93,7 @@ class UserController {
 
 		let result
 		try {
-			const response = await this.session.run(query, queryOptions)
+			const response = await SESSION.run(query, queryOptions)
 			console.log("User.js : LINE 198: \n", response.records)
 			result = response.records.map((record) => {
 				return {
@@ -117,7 +112,7 @@ class UserController {
 		}
 	}
 
-	async search(username) {
+	static async search(username) {
 		const query = `
             MATCH (user:USER)
             WITH user, apoc.text.levenshteinDistance(user.username, $username) AS score
@@ -134,7 +129,7 @@ class UserController {
 
 		let result
 		try {
-			const response = await this.session.run(query, options)
+			const response = await SESSION.run(query, options)
 			result = response.records.map((record) => {
 				return {
 					id: record._fields[0].id.low,
@@ -150,7 +145,7 @@ class UserController {
 		}
 	}
 
-	async areFriendsOrPublic(userId, targetId) {
+	static async areFriendsOrPublic(userId, targetId) {
 		const queryPrivacyStatus = `
             MATCH (user:USER)
             WHERE ID(user)=$targetId
@@ -159,7 +154,7 @@ class UserController {
 
 		let privacyStatus
 		try {
-			const queryPrivacyStatusResponse = await this.session.run(queryPrivacyStatus, {
+			const queryPrivacyStatusResponse = await SESSION.run(queryPrivacyStatus, {
 				targetId: parseInt(targetId),
 			})
 			privacyStatus = queryPrivacyStatusResponse.records[0]._fields[0]
@@ -187,7 +182,7 @@ class UserController {
 
 		let accepted
 		try {
-			const queryFriendsResponse = await this.session.run(queryFriends, queryOptions)
+			const queryFriendsResponse = await SESSION.run(queryFriends, queryOptions)
 
 			if (!queryFriendsResponse.records[0]) {
 				return false
@@ -204,7 +199,7 @@ class UserController {
 
 
 	// CREATE METHODS
-	async insert(user) {
+	static async insert(user) {
 		const query = `
 			CREATE (user:USER {
 				username: $username,
@@ -217,7 +212,7 @@ class UserController {
 
 		let result
 		try {
-			const rawResult = await this.session.run(query, {
+			const rawResult = await SESSION.run(query, {
 				username: user.username,
 				hash: user.hash,
 				privacyStatus: user.privacyStatus,
@@ -233,7 +228,7 @@ class UserController {
 		}
 	}
 
-	async addBefriendRelationship(userId, friendId, mutual) {
+	static async addBefriendRelationship(userId, friendId, mutual) {
 		const query = `
             MATCH (user:USER)
             WHERE ID(user) = $userId 
@@ -254,7 +249,7 @@ class UserController {
 
 		let result
 		try {
-			result = await this.session.run(query, options)
+			result = await SESSION.run(query, options)
 		} catch (error) {
 			console.error(error)
 		} finally {
@@ -262,7 +257,7 @@ class UserController {
 		}
 	}
 
-	async removeBefriendRelationship(userId, friendsId) {
+	static async removeBefriendRelationship(userId, friendsId) {
 		const query = `
             MATCH (user:USER)
             WHERE  ID(user) = $userId
@@ -278,13 +273,13 @@ class UserController {
 		}
 
 		try {
-			await this.session.run(query, options)
+			await SESSION.run(query, options)
 		} catch (error) {
 			console.error(error)
 		}
 	}
 
-	async addBlockRelationship(userId, targetUserId) {
+	static async addBlockRelationship(userId, targetUserId) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
@@ -303,7 +298,7 @@ class UserController {
 
 		let result
 		try {
-			const queryResponse = await this.session.run(blockQuery, blockQueryOptions)
+			const queryResponse = await SESSION.run(blockQuery, blockQueryOptions)
 			result = queryResponse.records[0]._fields[0].properties
 		} catch (error) {
 			console.error(error)
@@ -312,7 +307,7 @@ class UserController {
 		}
 	}
 
-	async removeBlockRelationship(userId, blockedUser) {
+	static async removeBlockRelationship(userId, blockedUser) {
 		const blockQuery = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
@@ -328,13 +323,11 @@ class UserController {
 		}
 
 		try {
-			await this.session.run(blockQuery, blockQueryOptions)
+			await SESSION.run(blockQuery, blockQueryOptions)
 		} catch (error) {
 			console.error(error)
 		}
 	}
 }
 
-// Exports an instance of the user controller so that it's not created multiple times
-// For a better understand about this search for "singleton pattern"
-module.exports = new UserController()
+module.exports = UserController
