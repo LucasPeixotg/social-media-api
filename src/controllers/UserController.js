@@ -24,10 +24,11 @@ class UserController {
 		try {
 			const rawResult = await SESSION.run(query, { username })
 
-			result = {
-				_id: rawResult.records[0]._fields[0].identity.low,
-				...rawResult.records[0]._fields[0].properties,
-			}
+			if (rawResult.records.length != 0)
+				result = {
+					_id: rawResult.records[0]._fields[0].identity.low,
+					...rawResult.records[0]._fields[0].properties,
+				}
 		} catch (error) {
 			console.error(error)
 			return null

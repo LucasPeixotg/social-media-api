@@ -22,7 +22,8 @@ initialize database
 const NEO4J_URI = process.env.NEO4J_URI
 const NEO4J_USERNAME = process.env.NEO4J_USERNAME
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD
-require('./config/dbDriver').connect(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD)
+const DATABASE = process.env.DATABASE
+require('./config/dbDriver').connect(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD, DATABASE)
 
 
 /*
@@ -35,15 +36,15 @@ app.use(passport.initialize())
 /*
 routes setup
 */
-/*
 const authRouter = require('./routes/auth')
+/*
 const followRouter = require('./routes/follow')
 const postRouter = require('./routes/post')
 const commentRouter = require('./routes/comment')
 const userRouter = require('./routes/user')
 */
 
-app.use(authRouter)
+app.use('/auth', authRouter)
 
 // secure routes
 /*
@@ -53,9 +54,7 @@ app.use('/comment', passport.authenticate('jwt', { session: false }), commentRou
 app.use('/user', passport.authenticate('jwt', { session: false }), userRouter)
 */
 
-/*
-start server
-*/
+// start server
 app.listen(5000, () => {
     console.log('server started. listenig on port 5000')
 })

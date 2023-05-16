@@ -1,5 +1,4 @@
 require('dotenv').config()
-
 const JWT_SECRET = process.env.JWT_SECRET
 
 const passport = require('passport')
@@ -18,7 +17,7 @@ passport.use('register', new LocalStrategy(
     }, async (username, password, done) => {
         try {
             // check if username is already in use
-            if (await UserController.getByUsername(usename)) {
+            if (await UserController.getByUsername(username)) {
                 return done(null, false)
             }
 
