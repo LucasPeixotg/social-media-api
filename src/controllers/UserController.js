@@ -1,4 +1,6 @@
 const SESSION = require("../config/dbDriver").getConnection()
+
+
 /*
 	TODO: 
 	[ ] REFACTOR addBlockRelationship AND removeBlockRelationship METHOD
@@ -9,15 +11,16 @@ const SESSION = require("../config/dbDriver").getConnection()
 	[ ] REFACTOR insert TO RETURN USER MODEL
 */
 
+
 // the UserController is a class that allows multiple actions on the database
 // it only has user related actions
 class UserController {
 	// READ METHODS
 	static async getByUsername(username) {
 		const query = `
-		MATCH (user:USER)
-		WHERE user.username = $username
-		RETURN user LIMIT 1
+			MATCH (user:USER)
+			WHERE user.username = $username
+			RETURN user LIMIT 1
 		`
 
 		let result
@@ -29,11 +32,35 @@ class UserController {
 					_id: rawResult.records[0]._fields[0].identity.low,
 					...rawResult.records[0]._fields[0].properties,
 				}
+
+			return result
 		} catch (error) {
 			console.error(error)
 			return null
-		} finally {
+		}
+	}
+
+	static async getById(id) {
+		const query = `
+			MATCH (user:USER)
+			WHERE ID(user) = $id
+			RETURN user
+		`
+
+		let result
+		try {
+			const rawResult = await SESSION.run(query, { id: parseInt(id) })
+
+			if (rawResult.records.length != 0)
+				result = {
+					_id: rawResult.records[0]._fields[0].identity.low,
+					...rawResult.records[0]._fields[0].properties,
+				}
+
 			return result
+		} catch (error) {
+			console.error(error)
+			return null
 		}
 	}
 
@@ -65,11 +92,11 @@ class UserController {
 					sender: record._fields[0].sender,
 				}
 			})
+
+			return result
 		} catch (error) {
 			console.error(error)
 			return null
-		} finally {
-			return result
 		}
 	}
 
@@ -87,16 +114,15 @@ class UserController {
                 followBackAccepted: relation.accepted
             }
         `
-
-		const queryOptions = {
+		const options = {
 			userId: parseInt(userId),
 		}
 
 		let result
 		try {
-			const response = await SESSION.run(query, queryOptions)
-			console.log("User.js : LINE 198: \n", response.records)
-			result = response.records.map((record) => {
+			const rawResult = await SESSION.run(query, options)
+			console.log("User.js : LINE 198: \n", rawResult.records)
+			result = rawResult.records.map((record) => {
 				return {
 					id: record._fields[0].id.low,
 					username: record._fields[0].username,
@@ -105,11 +131,11 @@ class UserController {
 					followBackAccepted: record._fields[0].followBackAccepted,
 				}
 			})
+
+			return result
 		} catch (error) {
 			console.error(error)
 			return null
-		} finally {
-			return result
 		}
 	}
 
@@ -125,24 +151,24 @@ class UserController {
             ORDER BY score
             LIMIT 5
         `
-
 		const options = { username }
 
 		let result
 		try {
-			const response = await SESSION.run(query, options)
-			result = response.records.map((record) => {
+			const rawResult = await SESSION.run(query, options)
+			// format result
+			result = rawResult.records.map((record) => {
 				return {
 					id: record._fields[0].id.low,
 					username: record._fields[0].username,
 					privacyStatus: record._fields[0].privacyStatus,
 				}
 			})
+
+			return result
 		} catch (error) {
 			console.error(error)
 			return null
-		} finally {
-			return result
 		}
 	}
 
@@ -229,15 +255,14 @@ class UserController {
 		}
 	}
 
-	static async addBefriendRelationship(userId, friendId, mutual) {
+	static async addBefriendRelationship(userId, friendId, mutual = false) {
 		const query = `
             MATCH (user:USER)
             WHERE ID(user) = $userId 
             MATCH (friend:USER)
             WHERE ID(friend) = $friendId
-            MERGE (user)<-[relation:BEFRIENDS]->(friend)
+            MERGE (user)-[relation:BEFRIENDS]->(friend)
 			SET relation.mutual = $mutual
-			SET relation.sender = $sender
             RETURN { relation: type(relation), accepted: relation.accepted }
         `
 
@@ -245,7 +270,6 @@ class UserController {
 			userId: parseInt(userId),
 			friendId: parseInt(friendId),
 			mutual: mutual,
-			sender: parseInt(userId),
 		}
 
 		let result
@@ -281,7 +305,7 @@ class UserController {
 	}
 
 	static async addBlockRelationship(userId, targetUserId) {
-		const blockQuery = `
+		const query = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
             MATCH (targetUser:USER)
@@ -291,7 +315,7 @@ class UserController {
             RETURN relation
         `
 
-		const blockQueryOptions = {
+		const options = {
 			userId: parseInt(userId),
 			targetUserId: parseInt(targetUserId),
 			date: Date.now(),
@@ -299,17 +323,17 @@ class UserController {
 
 		let result
 		try {
-			const queryResponse = await SESSION.run(blockQuery, blockQueryOptions)
+			const queryResponse = await SESSION.run(query, options)
 			result = queryResponse.records[0]._fields[0].properties
+
+			return result
 		} catch (error) {
 			console.error(error)
-		} finally {
-			return result
 		}
 	}
 
 	static async removeBlockRelationship(userId, blockedUser) {
-		const blockQuery = `
+		const query = `
             MATCH (user:USER)
             WHERE ID(user) = $userId
             MATCH (targetUser:USER)
@@ -318,13 +342,38 @@ class UserController {
             DELETE relation
         `
 
-		const blockQueryOptions = {
+		const options = {
 			userId: parseInt(userId),
 			targetUserId: parseInt(blockedUser),
 		}
 
 		try {
-			await SESSION.run(blockQuery, blockQueryOptions)
+			await SESSION.run(query, options)
+		} catch (error) {
+			console.error(error)
+		}
+	}
+
+	static async acceptFriendshipRequest(userId, friendId) {
+		/*
+		return true if it's accepted, false if it's not
+		*/
+		const query = `
+			MATCH (friend:USER) -[relation:BEFRIENDS]-> (user:USER)
+			WHERE ID(user) = 1 AND ID(friend) = 0
+			SET relation.mutual = true
+			RETURN friend, user, relation
+		`
+
+		const options = {
+			userId,
+			friendId
+		}
+
+		try {
+			const rawResult = await SESSION.run(query, options)
+
+			return !!rawResult.records[0]
 		} catch (error) {
 			console.error(error)
 		}
